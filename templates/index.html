@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PhisLens — Next-Gen AI Phishing Website Detection</title>
+  <meta name="description" content="PhisLens is a modern cybersecurity application using machine learning to detect phishing websites from URL characteristics safely, without visiting or executing untrusted URLs.">
+
+  <!-- Google Fonts: Inter & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <!-- Dynamic Starry Particle Background Canvas -->
+  <canvas id="starfield-canvas" aria-hidden="true"></canvas>
+
+  <!-- Ambient Glow Orbs -->
+  <div class="glow-orb orb-primary" aria-hidden="true"></div>
+  <div class="glow-orb orb-secondary" aria-hidden="true"></div>
+
+  <!-- Navigation Bar -->
+  <header class="site-header">
+    <div class="header-container">
+      <!-- Animated PhisLens Brand Logo -->
+      <a href="#home" class="brand-link" id="brand-logo-btn">
+        <div class="logo-wrapper">
+          <svg class="cyber-lens-svg" viewBox="0 0 100 100" width="46" height="46" aria-label="PhisLens Cyber Eye">
+            <defs>
+              <linearGradient id="lensGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#c084fc" />
+                <stop offset="50%" stop-color="#8b5cf6" />
+                <stop offset="100%" stop-color="#4c1d95" />
+              </linearGradient>
+              <linearGradient id="reticleGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#a855f7" />
+                <stop offset="100%" stop-color="#06b6d4" />
+              </linearGradient>
+              <filter id="neonGlow" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="3" result="blur" />
+                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+              </filter>
+            </defs>
+            <!-- Outer Target Ring -->
+            <circle cx="50" cy="50" r="44" class="ring-outer" />
+            <!-- Rotating Segmented Reticle -->
+            <circle cx="50" cy="50" r="36" class="ring-reticle" />
+            <!-- Shield Outline -->
+            <path d="M50 20 L76 32 C76 56 64 74 50 82 C36 74 24 56 24 32 Z" class="shield-path" />
+            <!-- Core Cyber Lens Pupil -->
+            <circle cx="50" cy="48" r="14" class="lens-iris" />
+            <circle cx="50" cy="48" r="6" class="lens-pupil" filter="url(#neonGlow)" />
+            <!-- Scanning Crosshair -->
+            <line x1="50" y1="14" x2="50" y2="22" class="crosshair-tick" />
+            <line x1="50" y1="74" x2="50" y2="82" class="crosshair-tick" />
+            <line x1="18" y1="48" x2="26" y2="48" class="crosshair-tick" />
+            <line x1="74" y1="48" x2="82" y2="48" class="crosshair-tick" />
+          </svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-name">Phis<span class="brand-accent">Lens</span></span>
+          <span class="brand-tag">AI URL FORENSICS</span>
+        </div>
+      </a>
+
+      <!-- Desktop Navigation Menu -->
+      <nav class="main-nav" id="main-nav">
+        <ul class="nav-links">
+          <li><a href="#home" class="nav-item active" id="nav-home">Home</a></li>
+          <li><a href="#how-it-works" class="nav-item" id="nav-how">How It Works</a></li>
+          <li><a href="#about-us" class="nav-item" id="nav-about">About Us</a></li>
+        </ul>
+      </nav>
+
+      <!-- Header Actions: Model Status & Theme Toggle -->
+      <div class="header-actions">
+        <div class="model-badge" id="model-status-badge" title="Status of the trained Random Forest classifier">
+          <span class="pulse-dot"></span>
+          <span class="badge-text" id="model-status-text">AI Model: Ready</span>
+        </div>
+
+        <button class="theme-toggle-btn" id="theme-toggle-btn" aria-label="Toggle dark/light theme" title="Toggle Theme">
+          <svg class="theme-icon sun-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+          <svg class="theme-icon moon-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+        </button>
+
+        <!-- Mobile Menu Toggle Button -->
+        <button class="mobile-menu-btn" id="mobile-menu-toggle" aria-label="Open mobile navigation">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="main-content">
+
+    <!-- ==================== SECTION 1: HOME ==================== -->
+    <section id="home" class="page-section section-home">
+      <div class="section-container">
+
+        <!-- Hero Area -->
+        <div class="hero-block">
+          <div class="hero-pill">
+            <span class="pill-sparkle">✦</span>
+            <span>Intelligent Cyber Threat Defense</span>
+          </div>
+          <h1 class="hero-title">
+            Zero-Trust <span class="gradient-text">Phishing Detection</span> Through Machine Learning
+          </h1>
+          <p class="hero-subtitle">
+            Inspect suspicious URLs instantly. PhisLens evaluates 26 structural, lexical, and statistical threat vectors offline using an ensemble Random Forest model — without ever exposing you to the target website.
+          </p>
+
+          <!-- Telemetry Badges -->
+          <div class="telemetry-bar">
+            <div class="telemetry-item">
+              <span class="telemetry-icon">🛡️</span>
+              <span class="telemetry-val">Zero-Network Sandbox</span>
+              <span class="telemetry-desc">URLs are never visited</span>
+            </div>
+            <div class="telemetry-item">
+              <span class="telemetry-icon">⚡</span>
+              <span class="telemetry-val">&lt; 1 ms Latency</span>
+              <span class="telemetry-desc">Instant vector extraction</span>
+            </div>
+            <div class="telemetry-item">
+              <span class="telemetry-icon">📊</span>
+              <span class="telemetry-val">91.5% Test Accuracy</span>
+              <span class="telemetry-desc">Trained on verified dataset</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- URL Scanner Card -->
+        <div class="scanner-card glass-panel" id="scanner-container">
+          <div class="scanner-header">
+            <div class="scanner-title-group">
+              <div class="cyber-indicator"></div>
+              <h2 class="scanner-title">URL Forensic Scanner</h2>
+            </div>
+            <span class="scanner-mode-label">SAFE INSPECTION MODE</span>
+          </div>
+
+          <form id="url-scan-form" class="scan-form" novalidate>
+            <div class="input-wrapper">
+              <div class="input-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                </svg>
+              </div>
+
+              <input
+                type="text"
+                id="url-input"
+                class="url-input-field"
+                placeholder="Enter URL to inspect (e.g., https://example.com, verify-account.xyz, paypal.com)"
+                autocomplete="off"
+                spellcheck="false"
+                required
+              >
+
+              <button type="button" class="clear-input-btn" id="clear-input-btn" aria-label="Clear input" title="Clear text">
+                ✕
+              </button>
+
+              <button type="submit" class="scan-btn" id="scan-submit-btn">
+                <span class="btn-spinner" id="btn-spinner" aria-hidden="true"></span>
+                <span class="btn-icon" id="btn-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                  </svg>
+                </span>
+                <span class="btn-text" id="btn-text">Analyze URL</span>
+              </button>
+            </div>
+          </form>
+
+          <!-- Input Feedback Alert -->
+          <div class="input-alert" id="input-alert" role="alert" aria-live="polite"></div>
+
+          <!-- Quick Test Samples -->
+          <div class="quick-samples">
+            <span class="samples-label">Quick Test Samples:</span>
+            <div class="sample-chips">
+              <button type="button" class="sample-chip legit-chip" data-sample="https://wikipedia.org">
+                <span class="chip-dot"></span> wikipedia.org (Legitimate)
+              </button>
+              <button type="button" class="sample-chip phish-chip" data-sample="http://paypal-verification-account-update.xyz/login.html">
+                <span class="chip-dot"></span> paypal-update.xyz (Phishing)
+              </button>
+              <button type="button" class="sample-chip ip-chip" data-sample="http://192.168.1.100/admin/login.php">
+                <span class="chip-dot"></span> 192.168.1.100 (IP Host)
+              </button>
+              <button type="button" class="sample-chip short-chip" data-sample="http://bit.ly/secure-account-reset">
+                <span class="chip-dot"></span> bit.ly/secure (Shortener)
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Scanning Animation Box -->
+        <div class="scanning-animation-box glass-panel" id="scanning-progress-box" aria-hidden="true">
+          <div class="radar-scan-graphic">
+            <div class="radar-grid"></div>
+            <div class="radar-sweep"></div>
+            <div class="radar-center-blip"></div>
+          </div>
+          <div class="scanning-info">
+            <h3 class="scanning-title">Extracting 26 Structural Vectors...</h3>
+            <p class="scanning-log" id="scanning-log-text">Analyzing domain entropy, character ratios, and keyword risks...</p>
+            <div class="cyber-progress-bar">
+              <div class="cyber-progress-fill" id="scanning-progress-fill"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Results Panel (Rendered dynamically) -->
+        <div class="results-container" id="results-container" aria-live="polite">
+          <!-- Filled dynamically by JavaScript -->
+        </div>
+
+        <!-- Interactive Web Protection Card -->
+        <div class="protection-card glass-panel">
+          <div class="protection-header">
+            <div class="protection-icon-wrap">
+              <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              </svg>
+            </div>
+            <div>
+              <h3 class="protection-title">Interactive Phishing Shield Features</h3>
+              <p class="protection-subtitle">How PhisLens protects users from emerging web-based social engineering threats</p>
+            </div>
+          </div>
+
+          <div class="protection-grid">
+            <div class="feature-card">
+              <div class="feature-icon">🛡️</div>
+              <h4 class="feature-name">Zero-Visit URL Sandbox</h4>
+              <p class="feature-text">
+                Traditional scanners download suspicious web pages, risking browser exploit triggers and drive-by malware. PhisLens performs 100% offline lexical analysis.
+              </p>
+            </div>
+            <div class="feature-card">
+              <div class="feature-icon">🧠</div>
+              <h4 class="feature-name">Random Forest ML Ensemble</h4>
+              <p class="feature-text">
+                100 decision trees evaluate intricate non-linear relationships across subdomain depth, brand keywords, Shannon entropy, and character continuation patterns.
+              </p>
+            </div>
+            <div class="feature-card">
+              <div class="feature-icon">🔍</div>
+              <h4 class="feature-name">Deceptive Hostname Forensics</h4>
+              <p class="feature-text">
+                Detects typosquatting, raw IP address URLs, suspicious top-level domains (.xyz, .tk, .top), and URL shorteners commonly utilized to mask phishing destinations.
+              </p>
+            </div>
+            <div class="feature-card">
+              <div class="feature-icon">🎯</div>
+              <h4 class="feature-name">Calibrated Risk Scoring</h4>
+              <p class="feature-text">
+                Genuine probability distributions calculate Legitimate (Green), Suspicious (Yellow), or Phishing (Red) verdicts with transparent security explanations.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Scan History -->
+        <div class="history-card glass-panel" id="history-container">
+          <div class="history-header">
+            <div class="history-title-group">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+              <h3 class="history-title">Recent Scan History</h3>
+            </div>
+            <button type="button" class="clear-history-btn" id="clear-history-btn">
+              Clear History
+            </button>
+          </div>
+
+          <div class="history-list" id="history-list">
+            <div class="history-empty">
+              <span>No recent scans recorded. Enter a URL above to perform your first forensic inspection.</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 2: HOW IT WORKS ==================== -->
+    <section id="how-it-works" class="page-section section-how">
+      <div class="section-container">
+        <div class="section-header">
+          <div class="hero-pill">
+            <span class="pill-sparkle">⚙️</span>
+            <span>Technical Methodology</span>
+          </div>
+          <h2 class="section-title">How <span class="gradient-text">PhisLens</span> Operates</h2>
+          <p class="section-subtitle">
+            An end-to-end look at lexical feature extraction, ensemble model classification, and empirical performance metrics.
+          </p>
+        </div>
+
+        <!-- 3 Architecture Step Cards -->
+        <div class="how-steps-grid">
+          <div class="step-card glass-panel">
+            <div class="step-badge">STEP 01</div>
+            <div class="step-icon-wrap">
+              <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                <polyline points="2 17 12 22 22 17"></polyline>
+                <polyline points="2 12 12 17 22 12"></polyline>
+              </svg>
+            </div>
+            <h3 class="step-title">URL Feature Engineering</h3>
+            <p class="step-desc">
+              When a URL is submitted, PhisLens normalizes the string safely and extracts 26 purely lexical and statistical dimensions without visiting the website:
+            </p>
+            <ul class="step-feature-list">
+              <li><strong>Structural:</strong> URL length, path depth, hostname length, and query length.</li>
+              <li><strong>Characters:</strong> Quantity of dots, hyphens, slashes, '@' symbols, and digit ratios.</li>
+              <li><strong>Security Flags:</strong> Raw IP hostnames, URL shortener domains, and high-risk TLDs.</li>
+              <li><strong>Entropy:</strong> Shannon character entropy to detect algorithmically generated tokens.</li>
+            </ul>
+          </div>
+
+          <div class="step-card glass-panel">
+            <div class="step-badge">STEP 02</div>
+            <div class="step-icon-wrap">
+              <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                <line x1="8" y1="21" x2="16" y2="21"></line>
+                <line x1="12" y1="17" x2="12" y2="21"></line>
+              </svg>
+            </div>
+            <h3 class="step-title">Random Forest Classification</h3>
+            <p class="step-desc">
+              The 26-element feature vector is fed to a 100-tree Random Forest classifier trained on 20,000 verified legitimate and phishing URLs:
+            </p>
+            <ul class="step-feature-list">
+              <li><strong>Ensemble Voting:</strong> 100 decision trees evaluate subsets of features independently.</li>
+              <li><strong>Predictive Non-linearity:</strong> Identifies subtle correlations (e.g., authentication words inside subdomains on unfamiliar TLDs).</li>
+              <li><strong>Overfitting Resistance:</strong> Bagging and random feature splits ensure high generalization on unseen URLs.</li>
+            </ul>
+          </div>
+
+          <div class="step-card glass-panel">
+            <div class="step-badge">STEP 03</div>
+            <div class="step-icon-wrap">
+              <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+            </div>
+            <h3 class="step-title">Calibrated Scoring & Limitations</h3>
+            <p class="step-desc">
+              Predictions are mapped into 3 transparent risk levels with clear acknowledgments of technological boundaries:
+            </p>
+            <ul class="step-feature-list">
+              <li><strong>Legitimate (Green):</strong> Phishing probability &lt; 40%.</li>
+              <li><strong>Suspicious (Yellow):</strong> Phishing probability between 40% and 65%.</li>
+              <li><strong>Phishing (Red):</strong> Phishing probability &gt; 65%.</li>
+              <li><strong>Safety Caveat:</strong> Machine learning identifies structural patterns; it does not guarantee content authenticity. Legitimate sites can be compromised, and attackers constantly innovate URL structures.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Live Model Performance Card -->
+        <div class="metrics-card glass-panel">
+          <div class="metrics-header">
+            <div>
+              <h3 class="metrics-title">Empirical Model Performance on Held-Out Test Set</h3>
+              <p class="metrics-subtitle">Evaluated on 3,994 stratified test URLs (20% held-out test split) with zero data leakage.</p>
+            </div>
+            <span class="metrics-tag">VERIFIED EVALUATION</span>
+          </div>
+
+          <div class="metrics-grid">
+            <div class="metric-box">
+              <span class="metric-val" id="metric-accuracy">91.46%</span>
+              <span class="metric-name">Overall Accuracy</span>
+              <span class="metric-sub">Correct overall predictions</span>
+            </div>
+            <div class="metric-box">
+              <span class="metric-val" id="metric-precision">95.01%</span>
+              <span class="metric-name">Precision</span>
+              <span class="metric-sub">Low false positive rate</span>
+            </div>
+            <div class="metric-box">
+              <span class="metric-val" id="metric-recall">87.55%</span>
+              <span class="metric-name">Recall</span>
+              <span class="metric-sub">Phishing catches identified</span>
+            </div>
+            <div class="metric-box">
+              <span class="metric-val" id="metric-f1">91.13%</span>
+              <span class="metric-name">F1-Score</span>
+              <span class="metric-sub">Harmonic mean balance</span>
+            </div>
+          </div>
+
+          <!-- Confusion Matrix Visual -->
+          <div class="confusion-matrix-container">
+            <h4 class="cm-heading">Held-Out Confusion Matrix</h4>
+            <div class="cm-table-wrap">
+              <table class="cm-table">
+                <thead>
+                  <tr>
+                    <th></th>
+                    <th>Predicted Legitimate</th>
+                    <th>Predicted Phishing</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <th>Actual Legitimate</th>
+                    <td class="cm-cell cm-tn"><span class="cm-num" id="cm-tn">1,902</span> <span class="cm-lbl">True Negatives</span></td>
+                    <td class="cm-cell cm-fp"><span class="cm-num" id="cm-fp">92</span> <span class="cm-lbl">False Positives</span></td>
+                  </tr>
+                  <tr>
+                    <th>Actual Phishing</th>
+                    <td class="cm-cell cm-fn"><span class="cm-num" id="cm-fn">249</span> <span class="cm-lbl">False Negatives</span></td>
+                    <td class="cm-cell cm-tp"><span class="cm-num" id="cm-tp">1,751</span> <span class="cm-lbl">True Positives</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 3: ABOUT US ==================== -->
+    <section id="about-us" class="page-section section-about">
+      <div class="section-container">
+        <div class="section-header">
+          <div class="hero-pill">
+            <span class="pill-sparkle">👥</span>
+            <span>Project Contributors</span>
+          </div>
+          <h2 class="section-title">About <span class="gradient-text">PhisLens</span></h2>
+          <p class="section-subtitle">
+            PhisLens — Phishing Website Detection Using Machine Learning
+          </p>
+        </div>
+
+        <div class="about-grid">
+          <!-- Creators Card -->
+          <div class="creator-card glass-panel">
+            <div class="creator-badge-cyber">LEAD DEVELOPERS</div>
+            <h3 class="creator-section-title">Project Authors</h3>
+
+            <div class="authors-list">
+              <div class="author-item">
+                <div class="author-avatar">JK</div>
+                <div class="author-details">
+                  <h4 class="author-name">Jaweriya Midhath Khanam</h4>
+                  <span class="author-role">Machine Learning & Backend Development</span>
+                </div>
+              </div>
+              <div class="author-divider"></div>
+              <div class="author-item">
+                <div class="author-avatar">TN</div>
+                <div class="author-details">
+                  <h4 class="author-name">Syeda Tuba Naaz</h4>
+                  <span class="author-role">Cybersecurity Research & Full-Stack Architecture</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Categories -->
+            <div class="project-categories">
+              <span class="cat-pill">🛡️ Cybersecurity</span>
+              <span class="cat-pill">🤖 Machine Learning</span>
+              <span class="cat-pill">🌐 Web Security</span>
+            </div>
+          </div>
+
+          <!-- Project Statement Card -->
+          <div class="mission-card glass-panel">
+            <div class="mission-badge">RESEARCH OBJECTIVE</div>
+            <h3 class="mission-title">Mission & Technical Foundation</h3>
+            <p class="mission-text">
+              Phishing remains the primary attack vector for credential theft, unauthorized financial access, and corporate account takeovers. Traditional blacklisting methods suffer from high latency when confronting zero-day phishing campaigns whose domains often survive for only hours before being decommissioned.
+            </p>
+            <p class="mission-text">
+              <strong>PhisLens</strong> addresses this vulnerability by applying statistical machine learning directly to lexical and structural URL patterns. By training on a verified distribution of tens of thousands of legitimate and malicious URLs, PhisLens recognizes phishing characteristics in real time with zero network risk to the user.
+            </p>
+
+            <div class="architecture-specs">
+              <div class="spec-row">
+                <span class="spec-label">Backend Framework</span>
+                <span class="spec-value">Python / Flask REST API</span>
+              </div>
+              <div class="spec-row">
+                <span class="spec-label">ML Algorithm</span>
+                <span class="spec-value">Scikit-learn Random Forest (100 Estimators)</span>
+              </div>
+              <div class="spec-row">
+                <span class="spec-label">Feature Extraction</span>
+                <span class="spec-value">26 Offline Lexical & Structural Metrics</span>
+              </div>
+              <div class="spec-row">
+                <span class="spec-label">Frontend Stack</span>
+                <span class="spec-value">HTML5 / Vanilla CSS3 / JavaScript (ES6+)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Site Footer -->
+  <footer class="site-footer">
+    <div class="footer-container">
+      <div class="footer-brand">
+        <span class="footer-logo">Phis<span class="brand-accent">Lens</span></span>
+        <span class="footer-desc">Next-Generation AI Phishing Website Detection System</span>
+      </div>
+      <div class="footer-info">
+        <p>Created by <strong>Jaweriya Midhath Khanam</strong> &amp; <strong>Syeda Tuba Naaz</strong></p>
+        <p class="footer-copy">Cybersecurity • Machine Learning • Web Security</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
